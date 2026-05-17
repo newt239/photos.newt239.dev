@@ -19,6 +19,8 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Generate Cloudflare Worker types
+        run: pnpm wrangler types
       - name: Typecheck
         run: pnpm run typecheck
       - name: Oxlint
