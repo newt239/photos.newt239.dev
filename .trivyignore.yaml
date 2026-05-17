@@ -1,0 +1,10 @@
+# 各エントリは id / statement / expired_at 必須。判断根拠は .security/triage.md 参照。
+vulnerabilities:
+  - id: GHSA-67mh-4wv8-2f99
+    statement: >-
+      P3 (noise). esbuild@0.18.20 dev-server CORS. build 専用経路
+      drizzle-kit > @esbuild-kit/esm-loader > esbuild のみに存在し、
+      esbuild serve は未使用。Cloudflare Worker 本番バンドルは patched
+      esbuild 0.27.7 を使用するため到達不能。詳細・再エスカレーション条件は
+      .security/triage.md の GHSA-67mh-4wv8-2f99 行を参照。
+    expired_at: 2026-08-15

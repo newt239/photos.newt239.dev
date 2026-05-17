@@ -1,0 +1,17 @@
+# ローカル `trivy fs .` を CI の scan ジョブと同条件にするための設定。
+scan:
+  scanners:
+    - vuln
+    - secret
+    - misconfig
+
+severity:
+  - UNKNOWN
+  - LOW
+  - MEDIUM
+  - HIGH
+  - CRITICAL
+
+ignorefile: .trivyignore.yaml
+
+exit-code: 0
