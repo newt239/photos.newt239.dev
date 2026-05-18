@@ -6,8 +6,7 @@
     "build/",
     ".wrangler/",
     ".tanstack/",
-    "src/routeTree.gen.ts",
-    "worker-configuration.d.ts"
+    "src/routeTree.gen.ts"
   ],
   "env": {
     "browser": true,
