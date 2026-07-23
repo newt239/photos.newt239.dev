@@ -25,6 +25,17 @@ type UploadState = {
   error?: string;
 };
 
+const putToR2 = async (url: string, body: Blob, contentType: string) => {
+  const res = await fetch(url, {
+    body,
+    headers: { "Content-Type": contentType },
+    method: "PUT",
+  });
+  if (!res.ok) {
+    throw new Error(`R2_PUT_FAILED_${res.status}`);
+  }
+};
+
 export const UploadDropzone = ({ onComplete }: { onComplete?: () => void }) => {
   const [items, setItems] = useState<UploadState[]>([]);
   const [busy, setBusy] = useState(false);
@@ -32,17 +43,6 @@ export const UploadDropzone = ({ onComplete }: { onComplete?: () => void }) => {
 
   const updateItem = (id: string, patch: Partial<UploadState>) => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
-  };
-
-  const putToR2 = async (url: string, body: Blob, contentType: string) => {
-    const res = await fetch(url, {
-      body,
-      headers: { "Content-Type": contentType },
-      method: "PUT",
-    });
-    if (!res.ok) {
-      throw new Error(`R2_PUT_FAILED_${res.status}`);
-    }
   };
 
   const uploadOne = async (file: File, id: string) => {
@@ -111,6 +111,8 @@ export const UploadDropzone = ({ onComplete }: { onComplete?: () => void }) => {
     setBusy(true);
     try {
       for (const { file, item } of batch) {
+        // 進捗表示と負荷抑制のため意図的に 1 件ずつ逐次アップロードする
+        // eslint-disable-next-line no-await-in-loop
         await uploadOne(file, item.id);
       }
       await router.invalidate();

@@ -1,4 +1,4 @@
-import exifr from "exifr";
+import { parse } from "exifr";
 
 type ImageMeta = {
   width: number;
@@ -23,8 +23,10 @@ export const probeDimensions = async (file: File): Promise<{ width: number; heig
   try {
     const img = new Image();
     const loaded = new Promise<{ width: number; height: number }>((resolve, reject) => {
-      img.onload = () => resolve({ height: img.naturalHeight, width: img.naturalWidth });
-      img.onerror = () => reject(new Error("IMAGE_LOAD_FAILED"));
+      img.addEventListener("load", () =>
+        resolve({ height: img.naturalHeight, width: img.naturalWidth }),
+      );
+      img.addEventListener("error", () => reject(new Error("IMAGE_LOAD_FAILED")));
     });
     img.src = url;
     return await loaded;
@@ -46,7 +48,7 @@ const formatShutter = (value: unknown): string | null => {
 
 export const extractExif = async (file: File): Promise<Omit<ImageMeta, "width" | "height">> => {
   try {
-    const tags = (await exifr.parse(file, {
+    const tags = (await parse(file, {
       exif: true,
       gps: true,
       tiff: true,
@@ -80,27 +82,24 @@ export const extractExif = async (file: File): Promise<Omit<ImageMeta, "width" |
   }
 };
 
-const emptyExif = (): Omit<ImageMeta, "width" | "height"> => {
-  return {
-    altitude: null,
-    aperture: null,
-    cameraMake: null,
-    cameraModel: null,
-    focalLength: null,
-    iso: null,
-    latitude: null,
-    lensModel: null,
-    longitude: null,
-    orientation: null,
-    rawExif: null,
-    shutterSpeed: null,
-    takenAt: null,
-  };
-};
+const emptyExif = (): Omit<ImageMeta, "width" | "height"> => ({
+  altitude: null,
+  aperture: null,
+  cameraMake: null,
+  cameraModel: null,
+  focalLength: null,
+  iso: null,
+  latitude: null,
+  lensModel: null,
+  longitude: null,
+  orientation: null,
+  rawExif: null,
+  shutterSpeed: null,
+  takenAt: null,
+});
 
-const numOrNull = (v: unknown): number | null => {
-  return typeof v === "number" && Number.isFinite(v) ? v : null;
-};
+const numOrNull = (v: unknown): number | null =>
+  typeof v === "number" && Number.isFinite(v) ? v : null;
 const intOrNull = (v: unknown): number | null => {
   const n = numOrNull(v);
   return n === null ? null : Math.trunc(n);
@@ -131,8 +130,8 @@ export const generateThumbnail = async (
   try {
     const img = new Image();
     await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("IMAGE_LOAD_FAILED"));
+      img.addEventListener("load", () => resolve());
+      img.addEventListener("error", () => reject(new Error("IMAGE_LOAD_FAILED")));
       img.src = url;
     });
     const { naturalWidth: w, naturalHeight: h } = img;
@@ -147,9 +146,9 @@ export const generateThumbnail = async (
       return null;
     }
     ctx.drawImage(img, 0, 0, tw, th);
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob((b) => resolve(b), "image/webp", quality),
-    );
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((b) => resolve(b), "image/webp", quality);
+    });
     return blob;
   } catch {
     return null;

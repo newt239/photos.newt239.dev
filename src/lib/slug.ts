@@ -10,6 +10,4 @@ const slugify = (input: string): string => {
   return normalized || "album";
 };
 
-export const uniqueSlug = (title: string): string => {
-  return `${slugify(title)}-${nanoid(6)}`;
-};
+export const uniqueSlug = (title: string): string => `${slugify(title)}-${nanoid(6)}`;

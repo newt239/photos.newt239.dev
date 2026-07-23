@@ -21,7 +21,7 @@ const NewAlbumPage = () => {
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState<"private" | "public">("private");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +29,7 @@ const NewAlbumPage = () => {
       return;
     }
     setSubmitting(true);
-    setError(null);
+    setErrorMessage(null);
     try {
       const { slug } = await createAlbum({
         data: {
@@ -40,7 +40,7 @@ const NewAlbumPage = () => {
       });
       await navigate({ params: { slug }, to: "/admin/albums/$slug" });
     } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
+      setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setSubmitting(false);
     }
@@ -80,7 +80,7 @@ const NewAlbumPage = () => {
                 ]}
               />
             </div>
-            {error && <div style={{ color: "red" }}>{error}</div>}
+            {errorMessage && <div style={{ color: "red" }}>{errorMessage}</div>}
             <Group justify="flex-end">
               <Button type="submit" loading={submitting} disabled={title.trim().length === 0}>
                 作成

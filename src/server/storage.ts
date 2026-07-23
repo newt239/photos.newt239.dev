@@ -12,37 +12,31 @@ const MIME_EXT: Record<string, string> = {
   "image/webp": "webp",
 };
 
-const extFromMime = (mime: string): string => {
-  return MIME_EXT[mime.toLowerCase()] ?? "bin";
-};
+const extFromMime = (mime: string): string => MIME_EXT[mime.toLowerCase()] ?? "bin";
 
-export const buildOriginalKey = (userId: string, photoId: string, mime: string): string => {
-  return `users/${userId}/photos/${photoId}/original.${extFromMime(mime)}`;
-};
+export const buildOriginalKey = (userId: string, photoId: string, mime: string): string =>
+  `users/${userId}/photos/${photoId}/original.${extFromMime(mime)}`;
 
-export const buildThumbnailKey = (userId: string, photoId: string): string => {
-  return `users/${userId}/photos/${photoId}/thumb.webp`;
-};
+export const buildThumbnailKey = (userId: string, photoId: string): string =>
+  `users/${userId}/photos/${photoId}/thumb.webp`;
 
 export const keyOwnerId = (storageKey: string): string | null => {
   const match = /^users\/([^/]+)\//.exec(storageKey);
   return match?.[1] ?? null;
 };
 
-const r2Client = (): AwsClient => {
-  return new AwsClient({
+const r2Client = (): AwsClient =>
+  new AwsClient({
     accessKeyId: env.R2_ACCESS_KEY_ID,
     region: "auto",
     secretAccessKey: env.R2_SECRET_ACCESS_KEY,
     service: "s3",
   });
-};
 
 const R2_BUCKET_NAME = "photo";
 
-const r2Endpoint = (key: string): string => {
-  return `https://${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET_NAME}/${key}`;
-};
+const r2Endpoint = (key: string): string =>
+  `https://${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET_NAME}/${key}`;
 
 export const signPutUrl = async (
   key: string,

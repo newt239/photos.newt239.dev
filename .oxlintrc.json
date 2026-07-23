@@ -67,6 +67,7 @@
     "typescript/no-misused-promises": "off",
     "typescript/no-deprecated": "off",
     "typescript/no-confusing-void-expression": "off",
+    "typescript/no-floating-promises": "off",
     "typescript/unbound-method": "off",
     "typescript/prefer-readonly-parameter-types": "off",
     "typescript/only-throw-error": "off",
@@ -92,6 +93,20 @@
     "unicorn/numeric-separators-style": "off",
     "unicorn/no-null": "off",
     "unicorn/no-nested-ternary": "off",
-    "react/only-export-components": "off"
-  }
+    "react/only-export-components": "off",
+    "no-use-before-define": ["warn", { "functions": false, "variables": false }],
+    "unicorn/filename-case": ["warn", { "cases": { "kebabCase": true, "pascalCase": true } }],
+    "unicorn/no-document-cookie": "off",
+    "react-perf/jsx-no-jsx-as-prop": "off",
+    "jsx-a11y/label-has-associated-control": ["warn", { "controlComponents": ["Checkbox"] }]
+  },
+  "overrides": [
+    {
+      "files": ["**/*.cjs"],
+      "rules": {
+        "import/no-commonjs": "off",
+        "import/unambiguous": "off"
+      }
+    }
+  ]
 }

@@ -1,40 +1,8 @@
-import { Anchor, Card, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { Anchor, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-import classes from "#/components/AlbumCard.module.css";
-import { photoImageUrl } from "#/components/PhotoCard.tsx";
+import { PublicAlbumCard, type PublicAlbumData } from "#/components/PublicAlbumCard.tsx";
 import { listPublicAlbums } from "#/server/public.ts";
-
-type PublicAlbums = Awaited<ReturnType<typeof listPublicAlbums>>;
-
-const PublicAlbumCard = ({ album }: Readonly<{ album: PublicAlbums[number] }>) => {
-  const coverKey = album.coverThumbnailKey ?? album.coverStorageKey;
-  return (
-    <Link to="/albums/$slug" params={{ slug: album.slug }} className={classes.link}>
-      <Card withBorder radius="md" padding={0} className={classes.card}>
-        <div className={classes.cover}>
-          {coverKey ? (
-            <img src={photoImageUrl(coverKey)} alt="" loading="lazy" />
-          ) : (
-            <div className={classes.placeholder}>
-              <Text size="xs" c="dimmed">
-                No cover
-              </Text>
-            </div>
-          )}
-        </div>
-        <Stack gap={2} px="sm" py="xs">
-          <Text fw={600} truncate>
-            {album.title ?? "(無題)"}
-          </Text>
-          <Text size="xs" c="dimmed">
-            {album.photoCount} 枚
-          </Text>
-        </Stack>
-      </Card>
-    </Link>
-  );
-};
 
 const IndexPage = () => {
   const { albums } = Route.useLoaderData();
@@ -71,7 +39,7 @@ const IndexPage = () => {
 export const Route = createFileRoute("/")({
   component: IndexPage,
   head: () => ({ meta: [{ title: "Photo" }] }),
-  loader: async (): Promise<{ albums: PublicAlbums }> => ({
+  loader: async (): Promise<{ albums: PublicAlbumData[] }> => ({
     albums: await listPublicAlbums(),
   }),
 });

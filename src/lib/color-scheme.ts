@@ -4,9 +4,8 @@ export const COLOR_SCHEME_COOKIE = "mantine-color-scheme-value";
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
-export const isColorScheme = (value: unknown): value is MantineColorScheme => {
-  return value === "light" || value === "dark" || value === "auto";
-};
+export const isColorScheme = (value: unknown): value is MantineColorScheme =>
+  value === "light" || value === "dark" || value === "auto";
 
 export const cookieColorSchemeManager = (
   opts: { key?: string; maxAge?: number } = {},
@@ -38,7 +37,11 @@ export const cookieColorSchemeManager = (
       }
       document.cookie = `${key}=${value}; path=/; max-age=${maxAge}; SameSite=Lax`;
     },
-    subscribe: () => {},
-    unsubscribe: () => {},
+    subscribe: () => {
+      // Cookie ベースのため購読は不要
+    },
+    unsubscribe: () => {
+      // Cookie ベースのため購読は不要
+    },
   };
 };

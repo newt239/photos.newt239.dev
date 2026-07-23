@@ -3,11 +3,10 @@ import mantineCoreCss from "@mantine/core/styles.css?url";
 import mantineDropzoneCss from "@mantine/dropzone/styles.css?url";
 import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
 
+import ClerkProvider from "#/integrations/clerk/provider.tsx";
 import { cookieColorSchemeManager } from "#/lib/color-scheme.ts";
 import { getColorSchemeCookie } from "#/server/color-scheme.ts";
-
-import ClerkProvider from "../integrations/clerk/provider";
-import appCss from "../styles.css?url";
+import appCss from "#/styles.css?url";
 
 const colorSchemeManager = cookieColorSchemeManager();
 
@@ -33,25 +32,27 @@ export const Route = createRootRoute({
   head: () => ({
     links: [
       {
-        rel: "stylesheet",
         href: mantineCoreCss,
+        rel: "stylesheet",
       },
       {
-        rel: "stylesheet",
         href: mantineDropzoneCss,
+        rel: "stylesheet",
       },
       {
-        rel: "stylesheet",
         href: appCss,
+        rel: "stylesheet",
       },
     ],
     meta: [
       {
+        // HTML の meta charset は仕様上 "utf-8" である必要がある
+        // eslint-disable-next-line unicorn/text-encoding-identifier-case
         charSet: "utf-8",
       },
       {
-        name: "viewport",
         content: "width=device-width, initial-scale=1",
+        name: "viewport",
       },
       {
         title: "Photo",
