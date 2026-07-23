@@ -20,6 +20,16 @@ const AlbumPhotoDetailPage = () => {
           ← アルバムに戻る
         </Anchor>
       }
+      editLink={
+        <Anchor
+          size="sm"
+          renderRoot={(props) => (
+            <Link {...props} to="/admin/photos/$photoId/edit" params={{ photoId: photo.id }} />
+          )}
+        >
+          編集する
+        </Anchor>
+      }
     />
   );
 };

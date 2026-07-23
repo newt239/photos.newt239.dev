@@ -29,10 +29,12 @@ export const users = sqliteTable(
 export const photos = sqliteTable(
   "photos",
   {
+    alt: text(),
     altitude: real(),
     aperture: real(),
     cameraMake: text("camera_make"),
     cameraModel: text("camera_model"),
+    caption: text(),
     fileSize: integer("file_size").notNull(),
     focalLength: real("focal_length"),
     height: integer().notNull(),

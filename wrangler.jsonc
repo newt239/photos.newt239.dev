@@ -22,4 +22,7 @@
       "remote": true,
     },
   ],
+  "ai": {
+    "binding": "AI",
+  },
 }

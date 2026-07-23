@@ -91,6 +91,7 @@ export const getAlbumBySlug = createServerFn({ method: "GET" })
     const photoRows = await db
       .select({
         addedAt: albumPhotos.addedAt,
+        alt: photos.alt,
         height: photos.height,
         id: photos.id,
         mimeType: photos.mimeType,

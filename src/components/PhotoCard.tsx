@@ -6,6 +6,7 @@ import classes from "./PhotoCard.module.css";
 export type PhotoCardData = {
   readonly id: string;
   readonly title: string | null;
+  readonly alt: string | null;
   readonly storageKey: string;
   readonly thumbnailKey: string | null;
   readonly width: number;
@@ -27,7 +28,7 @@ export const PhotoCard = ({ photo, albumSlug }: Readonly<PhotoCardProps>) => {
   const card = (
     <Card withBorder radius="md" padding={0} className={classes.card}>
       <div className={classes.thumb} style={{ aspectRatio: `${photo.width} / ${photo.height}` }}>
-        <img src={src} alt={photo.title ?? ""} loading="lazy" />
+        <img src={src} alt={photo.alt ?? photo.title ?? ""} loading="lazy" />
       </div>
       {photo.title && (
         <Text className={classes.title} size="sm" truncate px="sm" py="xs">

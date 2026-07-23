@@ -4,6 +4,7 @@ import classes from "./PublicAlbumGallery.module.css";
 type PublicGalleryPhoto = {
   readonly id: string;
   readonly title: string | null;
+  readonly alt: string | null;
   readonly storageKey: string;
   readonly thumbnailKey: string | null;
   readonly width: number;
@@ -29,7 +30,7 @@ export const PublicAlbumGallery = ({ title, description, photos }: PublicAlbumGa
         >
           <img
             src={photoImageUrl(p.thumbnailKey ?? p.storageKey)}
-            alt={p.title ?? ""}
+            alt={p.alt ?? p.title ?? ""}
             loading="lazy"
             style={{ aspectRatio: `${p.width} / ${p.height}` }}
           />

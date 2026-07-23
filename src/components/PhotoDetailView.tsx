@@ -8,6 +8,8 @@ import classes from "./PhotoDetailView.module.css";
 type PhotoDetailData = {
   readonly id: string;
   readonly title: string | null;
+  readonly caption: string | null;
+  readonly alt: string | null;
   readonly storageKey: string;
   readonly width: number;
   readonly height: number;
@@ -114,9 +116,10 @@ const renderInfoList = (rows: readonly InfoRow[]) => (
 type Props = {
   readonly photo: PhotoDetailData;
   readonly backLink?: ReactNode;
+  readonly editLink?: ReactNode;
 };
 
-export const PhotoDetailView = ({ photo, backLink }: Props) => {
+export const PhotoDetailView = ({ photo, backLink, editLink }: Props) => {
   const imageSrc = photoImageUrl(photo.storageKey);
   const exifRows = buildExifRows(photo);
   const fileRows = buildFileRows(photo);
@@ -125,13 +128,19 @@ export const PhotoDetailView = ({ photo, backLink }: Props) => {
 
   return (
     <Stack p="xl" gap="md" maw={1200} mx="auto">
-      {backLink}
+      {(backLink || editLink) && (
+        <Group justify="space-between" wrap="nowrap">
+          {backLink}
+          {editLink}
+        </Group>
+      )}
 
       <Stack gap={4}>
         <Group justify="space-between" align="flex-start" wrap="nowrap">
           <Title order={2}>{photo.title ?? "(無題)"}</Title>
           <Badge variant="light">{photo.visibility === "public" ? "公開" : "非公開"}</Badge>
         </Group>
+        {photo.caption && <Text size="sm">{photo.caption}</Text>}
         {takenAt && (
           <Text size="sm" c="dimmed">
             撮影日時: {takenAt}
@@ -140,7 +149,7 @@ export const PhotoDetailView = ({ photo, backLink }: Props) => {
       </Stack>
 
       <div className={classes.frame} style={{ aspectRatio: `${photo.width} / ${photo.height}` }}>
-        <img src={imageSrc} alt={photo.title ?? ""} />
+        <img src={imageSrc} alt={photo.alt ?? photo.title ?? ""} />
       </div>
 
       <SimpleGrid cols={{ base: 1, md: hasLocation ? 3 : 2 }} spacing="md">

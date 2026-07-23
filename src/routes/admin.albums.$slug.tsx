@@ -47,6 +47,7 @@ const AlbumDetailPage = () => {
               key={p.id}
               albumSlug={slug}
               photo={{
+                alt: p.alt,
                 height: p.height,
                 id: p.id,
                 storageKey: p.storageKey,
@@ -80,6 +81,7 @@ type AlbumDetail = {
   readonly photos: readonly {
     readonly id: string;
     readonly title: string | null;
+    readonly alt: string | null;
     readonly storageKey: string;
     readonly thumbnailKey: string | null;
     readonly width: number;

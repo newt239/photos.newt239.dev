@@ -162,3 +162,100 @@ export const getPhoto = createServerFn({ method: "GET" })
     }
     return row;
   });
+
+const updatePhotoInput = z.object({
+  alt: z.string().max(500).nullable(),
+  caption: z.string().max(2000).nullable(),
+  id: z.string().min(1),
+  title: z.string().max(200).nullable(),
+});
+
+export const updatePhoto = createServerFn({ method: "POST" })
+  .inputValidator(updatePhotoInput)
+  .handler(async ({ data }) => {
+    const userId = await requireUserId();
+    const db = getDb(env.DB);
+    const [existing] = await db
+      .select({ id: photos.id })
+      .from(photos)
+      .where(and(eq(photos.id, data.id), eq(photos.userId, userId)))
+      .limit(1);
+    if (!existing) {
+      return { error: "NOT_FOUND", success: false } as const;
+    }
+    await db
+      .update(photos)
+      .set({ alt: data.alt, caption: data.caption, title: data.title })
+      .where(and(eq(photos.id, data.id), eq(photos.userId, userId)));
+    return { id: data.id, success: true } as const;
+  });
+
+const draftSchema = z
+  .object({
+    alt: z.string(),
+    caption: z.string(),
+  })
+  .partial();
+
+export const generatePhotoDraft = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ id: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    const userId = await requireUserId();
+    const db = getDb(env.DB);
+    const [photo] = await db
+      .select({ storageKey: photos.storageKey, thumbnailKey: photos.thumbnailKey })
+      .from(photos)
+      .where(and(eq(photos.id, data.id), eq(photos.userId, userId)))
+      .limit(1);
+    if (!photo) {
+      return { error: "NOT_FOUND", success: false } as const;
+    }
+
+    const obj = await env.MY_BUCKET.get(photo.thumbnailKey ?? photo.storageKey);
+    if (!obj) {
+      return { error: "IMAGE_NOT_FOUND", success: false } as const;
+    }
+    const image = [...new Uint8Array(await obj.arrayBuffer())];
+
+    const result = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", {
+      image,
+      max_tokens: 512,
+      messages: [
+        {
+          content:
+            "あなたは写真管理アプリのアシスタントです。画像を見て日本語でキャプションと代替テキストを生成します。" +
+            '出力は必ず次のJSON形式のみとし、前後に文章を付けないでください: {"caption": "...", "alt": "..."}。' +
+            "caption は写真の魅力を伝える1〜2文の説明文。alt はスクリーンリーダー向けの簡潔で客観的な描写にしてください。",
+          role: "system",
+        },
+        {
+          content: "この画像のキャプションと代替テキストを日本語で生成してください。",
+          role: "user",
+        },
+      ],
+      temperature: 0.2,
+    });
+
+    const raw = typeof result.response === "string" ? result.response : "";
+    const match = /\{[\s\S]*\}/.exec(raw);
+    let caption = raw.trim();
+    let alt = "";
+    if (match) {
+      try {
+        const parsed = draftSchema.safeParse(JSON.parse(match[0]));
+        if (parsed.success) {
+          const { alt: parsedAlt, caption: parsedCaption } = parsed.data;
+          if (parsedCaption !== undefined) {
+            caption = parsedCaption;
+          }
+          if (parsedAlt !== undefined) {
+            alt = parsedAlt;
+          }
+        }
+      } catch {
+        // JSON のパースに失敗した場合は全文を caption として扱う
+      }
+    }
+
+    return { alt, caption, success: true } as const;
+  });
