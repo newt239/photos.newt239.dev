@@ -18,7 +18,7 @@ export type AlbumCardData = {
 export const AlbumCard = ({ album }: Readonly<{ album: AlbumCardData }>) => {
   const coverKey = album.coverThumbnailKey ?? album.coverStorageKey;
   return (
-    <Link to="/albums/$slug" params={{ slug: album.slug }} className={classes.link}>
+    <Link to="/admin/albums/$slug" params={{ slug: album.slug }} className={classes.link}>
       <Card withBorder radius="md" padding={0} className={classes.card}>
         <div className={classes.cover}>
           {coverKey ? (

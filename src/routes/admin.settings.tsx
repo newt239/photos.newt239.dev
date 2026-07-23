@@ -11,9 +11,7 @@ import {
   Title,
   useMantineColorScheme,
 } from "@mantine/core";
-import { Link, createFileRoute, redirect } from "@tanstack/react-router";
-
-import { fetchAuth } from "#/server/auth.ts";
+import { Link, createFileRoute } from "@tanstack/react-router";
 
 const ProfileSection = () => {
   const { isLoaded, user } = useUser();
@@ -71,7 +69,7 @@ const SignOutButton = () => {
 const SettingsPage = () => {
   return (
     <Stack p="xl" gap="lg" maw={680} mx="auto">
-      <Anchor component={Link} to="/" size="sm">
+      <Anchor component={Link} to="/admin" size="sm">
         ← ホーム
       </Anchor>
       <Title order={2}>設定</Title>
@@ -108,14 +106,7 @@ const SettingsPage = () => {
   );
 };
 
-export const Route = createFileRoute("/settings")({
-  beforeLoad: async () => {
-    const { userId } = await fetchAuth();
-    if (!userId) {
-      throw redirect({ params: { _splat: "" }, to: "/login/$" });
-    }
-    return { userId };
-  },
+export const Route = createFileRoute("/admin/settings")({
   component: SettingsPage,
   head: () => ({ meta: [{ title: "設定 | Photo" }] }),
 });

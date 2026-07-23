@@ -11,10 +11,9 @@ import {
   Textarea,
   Title,
 } from "@mantine/core";
-import { Link, createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { createAlbum } from "#/server/albums.ts";
-import { fetchAuth } from "#/server/auth.ts";
 
 const NewAlbumPage = () => {
   const navigate = useNavigate();
@@ -39,7 +38,7 @@ const NewAlbumPage = () => {
           visibility,
         },
       });
-      await navigate({ params: { slug }, to: "/albums/$slug" });
+      await navigate({ params: { slug }, to: "/admin/albums/$slug" });
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -49,7 +48,7 @@ const NewAlbumPage = () => {
 
   return (
     <Stack p="xl" gap="md" maw={680} mx="auto">
-      <Anchor component={Link} to="/" size="sm">
+      <Anchor component={Link} to="/admin" size="sm">
         ← ホーム
       </Anchor>
       <Title order={2}>新しいアルバム</Title>
@@ -94,14 +93,7 @@ const NewAlbumPage = () => {
   );
 };
 
-export const Route = createFileRoute("/albums/new")({
-  beforeLoad: async () => {
-    const { userId } = await fetchAuth();
-    if (!userId) {
-      throw redirect({ params: { _splat: "" }, to: "/login/$" });
-    }
-    return { userId };
-  },
+export const Route = createFileRoute("/admin/albums/new")({
   component: NewAlbumPage,
   head: () => ({ meta: [{ title: "新規アルバム | Photo" }] }),
 });

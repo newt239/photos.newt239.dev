@@ -1,141 +1,77 @@
-import { Button, Card, Group, Paper, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { Anchor, Card, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-import { AlbumCard, type AlbumCardData } from "#/components/AlbumCard.tsx";
-import { PhotoGrid } from "#/components/PhotoGrid.tsx";
-import { listMyAlbums } from "#/server/albums.ts";
-import { fetchAuth } from "#/server/auth.ts";
-import { listMyPhotos } from "#/server/photos.ts";
+import classes from "#/components/AlbumCard.module.css";
+import { photoImageUrl } from "#/components/PhotoCard.tsx";
+import { listPublicAlbums } from "#/server/public.ts";
 
-import type { PhotoCardData } from "#/components/PhotoCard.tsx";
+type PublicAlbums = Awaited<ReturnType<typeof listPublicAlbums>>;
 
-const PREVIEW_LIMIT = 6;
+const PublicAlbumCard = ({ album }: Readonly<{ album: PublicAlbums[number] }>) => {
+  const coverKey = album.coverThumbnailKey ?? album.coverStorageKey;
+  return (
+    <Link to="/albums/$slug" params={{ slug: album.slug }} className={classes.link}>
+      <Card withBorder radius="md" padding={0} className={classes.card}>
+        <div className={classes.cover}>
+          {coverKey ? (
+            <img src={photoImageUrl(coverKey)} alt="" loading="lazy" />
+          ) : (
+            <div className={classes.placeholder}>
+              <Text size="xs" c="dimmed">
+                No cover
+              </Text>
+            </div>
+          )}
+        </div>
+        <Stack gap={2} px="sm" py="xs">
+          <Text fw={600} truncate>
+            {album.title ?? "(無題)"}
+          </Text>
+          <Text size="xs" c="dimmed">
+            {album.photoCount} 枚
+          </Text>
+        </Stack>
+      </Card>
+    </Link>
+  );
+};
 
-type LoaderData =
-  | { readonly authed: false }
-  | {
-      readonly authed: true;
-      readonly photos: readonly PhotoCardData[];
-      readonly albums: readonly AlbumCardData[];
-    };
-
-const SignedOutView = () => (
-  <Stack
-    mih="calc(100vh - var(--mantine-spacing-xl) * 2)"
-    justify="center"
-    align="center"
-    p="xl"
-    gap="lg"
-  >
-    <Stack gap="xs" align="center">
-      <Title order={1}>Photo</Title>
-      <Text c="dimmed">あなたの写真を、あなたのために。</Text>
-    </Stack>
-    <Group>
-      <Button component="a" href="/login">
-        ログイン
-      </Button>
-      <Button component="a" href="/register" variant="default">
-        新規登録
-      </Button>
-    </Group>
-  </Stack>
-);
-
-const ActionCard = ({
-  to,
-  title,
-  description,
-}: {
-  readonly to: "/photos/upload" | "/albums/new" | "/settings";
-  readonly title: string;
-  readonly description: string;
-}) => (
-  <Card component={Link} to={to} withBorder radius="md" padding="md" style={{ height: "100%" }}>
-    <Text fw={600} mb={4}>
-      {title}
-    </Text>
-    <Text size="sm" c="dimmed">
-      {description}
-    </Text>
-  </Card>
-);
-
-const SignedInView = ({
-  photos,
-  albums,
-}: {
-  readonly photos: readonly PhotoCardData[];
-  readonly albums: readonly AlbumCardData[];
-}) => (
-  <Stack p="xl" gap="xl" maw={1200} mx="auto">
-    <Stack gap={4}>
-      <Title order={1}>Photo</Title>
-      <Text c="dimmed" size="sm">
-        最近の写真とアルバム
-      </Text>
-    </Stack>
-
-    <Stack gap="sm">
-      <Group justify="space-between" align="baseline">
-        <Title order={3}>写真</Title>
-        <Text component={Link} to="/photos" size="sm" c="blue">
-          すべて見る →
+const IndexPage = () => {
+  const { albums } = Route.useLoaderData();
+  return (
+    <Stack p="xl" gap="xl" maw={1200} mx="auto" mih="100vh">
+      <Stack gap={4}>
+        <Title order={1}>Photo</Title>
+        <Text c="dimmed" size="sm">
+          アルバム
         </Text>
-      </Group>
-      <PhotoGrid photos={photos} />
-    </Stack>
+      </Stack>
 
-    <Stack gap="sm">
-      <Group justify="space-between" align="baseline">
-        <Title order={3}>アルバム</Title>
-        <Text component={Link} to="/albums" size="sm" c="blue">
-          すべて見る →
-        </Text>
-      </Group>
       {albums.length === 0 ? (
         <Text c="dimmed" size="sm">
-          アルバムはまだありません
+          公開アルバムはまだありません
         </Text>
       ) : (
         <SimpleGrid cols={{ base: 2, md: 4, sm: 3 }} spacing="md">
           {albums.map((a) => (
-            <AlbumCard key={a.id} album={a} />
+            <PublicAlbumCard key={a.id} album={a} />
           ))}
         </SimpleGrid>
       )}
+
+      <Group justify="center" mt="auto">
+        <Anchor component={Link} to="/admin" size="xs" c="dimmed">
+          管理
+        </Anchor>
+      </Group>
     </Stack>
-
-    <Paper withBorder radius="md" p="md">
-      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
-        <ActionCard to="/photos/upload" title="アップロード" description="新しい写真を追加" />
-        <ActionCard to="/albums/new" title="アルバム作成" description="写真をまとめる" />
-        <ActionCard to="/settings" title="設定" description="プロフィールとテーマ" />
-      </SimpleGrid>
-    </Paper>
-  </Stack>
-);
-
-const IndexPage = () => {
-  const data = Route.useLoaderData();
-  if (!data.authed) {
-    return <SignedOutView />;
-  }
-  return <SignedInView photos={data.photos} albums={data.albums} />;
+  );
 };
 
 export const Route = createFileRoute("/")({
   component: IndexPage,
   head: () => ({ meta: [{ title: "Photo" }] }),
-  loader: async (): Promise<LoaderData> => {
-    const { userId } = await fetchAuth();
-    if (!userId) {
-      return { authed: false };
-    }
-    const [photos, albums] = await Promise.all([
-      listMyPhotos({ data: { limit: PREVIEW_LIMIT } }),
-      listMyAlbums({ data: { limit: PREVIEW_LIMIT } }),
-    ]);
-    return { albums, authed: true, photos };
-  },
+  loader: async (): Promise<{ albums: PublicAlbums }> => ({
+    albums: await listPublicAlbums(),
+  }),
 });

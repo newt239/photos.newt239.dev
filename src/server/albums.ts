@@ -45,14 +45,14 @@ export const listMyAlbums = createServerFn({ method: "GET" })
         coverStorageKey: sql<string | null>`(
             SELECT p.storage_key FROM album_photos ap
             JOIN photos p ON p.id = ap.photo_id
-            WHERE ap.album_id = ${albums.id}
+            WHERE ap.album_id = ${albums}.id
             ORDER BY ap.sort_order ASC, ap.added_at ASC
             LIMIT 1
           )`.as("cover_storage_key"),
         coverThumbnailKey: sql<string | null>`(
             SELECT p.thumbnail_key FROM album_photos ap
             JOIN photos p ON p.id = ap.photo_id
-            WHERE ap.album_id = ${albums.id}
+            WHERE ap.album_id = ${albums}.id
             ORDER BY ap.sort_order ASC, ap.added_at ASC
             LIMIT 1
           )`.as("cover_thumbnail_key"),
@@ -60,7 +60,7 @@ export const listMyAlbums = createServerFn({ method: "GET" })
         description: albums.description,
         id: albums.id,
         photoCount: sql<number>`(
-            SELECT COUNT(*) FROM album_photos WHERE album_photos.album_id = ${albums.id}
+            SELECT COUNT(*) FROM album_photos WHERE album_photos.album_id = ${albums}.id
           )`.as("photo_count"),
         slug: albums.slug,
         title: albums.title,

@@ -1,102 +1,25 @@
-import { useMemo, useState } from "react";
+import { Text } from "@mantine/core";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 
-import { Badge, Button, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
-import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { PublicAlbumGallery } from "#/components/PublicAlbumGallery.tsx";
+import { getPublicAlbumBySlug } from "#/server/public.ts";
 
-import { AddPhotosToAlbumModal } from "#/components/AddPhotosToAlbumModal.tsx";
-import { PhotoCard } from "#/components/PhotoCard.tsx";
-import { getAlbumBySlug } from "#/server/albums.ts";
-import { fetchAuth } from "#/server/auth.ts";
+type PublicAlbum = NonNullable<Awaited<ReturnType<typeof getPublicAlbumBySlug>>>;
 
-const AlbumDetailPage = () => {
+const PublicAlbumPage = () => {
   const { album, photos } = Route.useLoaderData();
-  const { slug } = Route.useParams();
-  const router = useRouter();
-  const [modalOpen, setModalOpen] = useState(false);
-  const existingIds = useMemo(() => new Set(photos.map((p) => p.id)), [photos]);
-
-  return (
-    <Stack p="xl" gap="md" maw={1200} mx="auto">
-      <Stack gap={4}>
-        <Group justify="space-between" align="flex-start">
-          <Stack gap={4}>
-            <Title order={2}>{album.title ?? "(無題)"}</Title>
-            <Group gap="xs">
-              <Badge variant="light">{album.visibility === "public" ? "公開" : "非公開"}</Badge>
-              <Text size="sm" c="dimmed">
-                {photos.length} 枚
-              </Text>
-            </Group>
-          </Stack>
-          <Button onClick={() => setModalOpen(true)}>写真を追加</Button>
-        </Group>
-        {album.description && (
-          <Text size="sm" c="dimmed">
-            {album.description}
-          </Text>
-        )}
-      </Stack>
-
-      {photos.length === 0 ? (
-        <Text c="dimmed" size="sm">
-          このアルバムにはまだ写真がありません
-        </Text>
-      ) : (
-        <SimpleGrid cols={{ base: 2, md: 4, sm: 3 }} spacing="md">
-          {photos.map((p) => (
-            <PhotoCard
-              key={p.id}
-              albumSlug={slug}
-              photo={{
-                height: p.height,
-                id: p.id,
-                storageKey: p.storageKey,
-                thumbnailKey: p.thumbnailKey,
-                title: p.title,
-                width: p.width,
-              }}
-            />
-          ))}
-        </SimpleGrid>
-      )}
-
-      <AddPhotosToAlbumModal
-        albumId={album.id}
-        opened={modalOpen}
-        onClose={() => setModalOpen(false)}
-        existingPhotoIds={existingIds}
-        onAdded={async () => router.invalidate()}
-      />
-    </Stack>
-  );
-};
-
-type AlbumDetail = {
-  readonly album: {
-    readonly id: string;
-    readonly title: string | null;
-    readonly description: string | null;
-    readonly visibility: "public" | "private";
-  };
-  readonly photos: readonly {
-    readonly id: string;
-    readonly title: string | null;
-    readonly storageKey: string;
-    readonly thumbnailKey: string | null;
-    readonly width: number;
-    readonly height: number;
-  }[];
+  if (photos.length === 0) {
+    return (
+      <Text c="dimmed" size="sm" p="xl">
+        このアルバムにはまだ写真がありません
+      </Text>
+    );
+  }
+  return <PublicAlbumGallery title={album.title} description={album.description} photos={photos} />;
 };
 
 export const Route = createFileRoute("/albums/$slug")({
-  beforeLoad: async () => {
-    const { userId } = await fetchAuth();
-    if (!userId) {
-      throw redirect({ params: { _splat: "" }, to: "/login/$" });
-    }
-    return { userId };
-  },
-  component: AlbumDetailPage,
+  component: PublicAlbumPage,
   head: ({ loaderData }) => ({
     meta: [{ title: `${loaderData?.album.title ?? "アルバム"} | Photo` }],
   }),
@@ -104,5 +27,11 @@ export const Route = createFileRoute("/albums/$slug")({
     params,
   }: {
     readonly params: { readonly slug: string };
-  }): Promise<AlbumDetail> => getAlbumBySlug({ data: { slug: params.slug } }),
+  }): Promise<PublicAlbum> => {
+    const result = await getPublicAlbumBySlug({ data: { slug: params.slug } });
+    if (!result) {
+      throw notFound();
+    }
+    return result;
+  },
 });

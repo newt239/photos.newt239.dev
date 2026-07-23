@@ -37,12 +37,12 @@ export const PhotoCard = ({ photo, albumSlug }: Readonly<PhotoCardProps>) => {
     </Card>
   );
   return albumSlug === undefined ? (
-    <Link to="/photos/$photoId" params={{ photoId: photo.id }} className={classes.link}>
+    <Link to="/admin/photos/$photoId" params={{ photoId: photo.id }} className={classes.link}>
       {card}
     </Link>
   ) : (
     <Link
-      to="/albums/$slug/photos/$photoId"
+      to="/admin/albums/$slug/photos/$photoId"
       params={{ photoId: photo.id, slug: albumSlug }}
       className={classes.link}
     >
