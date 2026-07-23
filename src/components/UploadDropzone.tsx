@@ -1,11 +1,21 @@
 import { useState } from "react";
 
-import { Button, Group, List, Paper, Progress, Stack, Text } from "@mantine/core";
+import {
+  Button,
+  Group,
+  Paper,
+  Progress,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  Textarea,
+} from "@mantine/core";
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useRouter } from "@tanstack/react-router";
 
 import { extractExif, generateThumbnail, probeDimensions } from "#/lib/image.ts";
-import { createPhotoUpload, finalizePhoto } from "#/server/photos.ts";
+import { createPhotoUpload, finalizePhoto, updatePhoto } from "#/server/photos.ts";
 
 const ACCEPTED_MIME = [
   "image/jpeg",
@@ -23,6 +33,13 @@ type UploadState = {
   status: "queued" | "preparing" | "uploading" | "saving" | "done" | "error";
   progress: number;
   error?: string;
+  photoId?: string;
+  thumbUrl?: string;
+  title: string;
+  caption: string;
+  alt: string;
+  rowSaving?: boolean;
+  saved?: boolean;
 };
 
 const putToR2 = async (url: string, body: Blob, contentType: string) => {
@@ -58,6 +75,9 @@ export const UploadDropzone = ({ onComplete }: { onComplete?: () => void }) => {
         extractExif(file),
         generateThumbnail(file),
       ]);
+      if (thumb) {
+        updateItem(id, { thumbUrl: URL.createObjectURL(thumb) });
+      }
 
       updateItem(id, { progress: 25 });
       const prep = await createPhotoUpload({
@@ -90,7 +110,7 @@ export const UploadDropzone = ({ onComplete }: { onComplete?: () => void }) => {
         },
       });
 
-      updateItem(id, { progress: 100, status: "done" });
+      updateItem(id, { photoId: prep.photoId, progress: 100, status: "done" });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       updateItem(id, { error: message, status: "error" });
@@ -101,10 +121,13 @@ export const UploadDropzone = ({ onComplete }: { onComplete?: () => void }) => {
     const batch: { file: File; item: UploadState }[] = files.map((file) => ({
       file,
       item: {
+        alt: "",
+        caption: "",
         id: `${Date.now()}-${file.name}-${Math.random().toString(36).slice(2, 6)}`,
         name: file.name,
         progress: 0,
         status: "queued",
+        title: "",
       },
     }));
     setItems((prev) => [...prev, ...batch.map((b) => b.item)]);
@@ -119,6 +142,31 @@ export const UploadDropzone = ({ onComplete }: { onComplete?: () => void }) => {
       onComplete?.();
     } finally {
       setBusy(false);
+    }
+  };
+
+  const saveRow = async (item: UploadState) => {
+    if (!item.photoId || item.rowSaving) {
+      return;
+    }
+    updateItem(item.id, { error: undefined, rowSaving: true, saved: false });
+    try {
+      const result = await updatePhoto({
+        data: {
+          alt: item.alt.trim() || null,
+          caption: item.caption.trim() || null,
+          id: item.photoId,
+          title: item.title.trim() || null,
+        },
+      });
+      if (result.success) {
+        updateItem(item.id, { rowSaving: false, saved: true });
+      } else {
+        updateItem(item.id, { error: result.error, rowSaving: false });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      updateItem(item.id, { error: message, rowSaving: false });
     }
   };
 
@@ -149,28 +197,107 @@ export const UploadDropzone = ({ onComplete }: { onComplete?: () => void }) => {
 
       {items.length > 0 && (
         <Paper withBorder p="md" radius="md">
-          <List spacing="sm" size="sm">
-            {items.map((it) => (
-              <List.Item key={it.id}>
-                <Stack gap={4}>
-                  <Group justify="space-between" wrap="nowrap">
-                    <Text size="sm" truncate>
-                      {it.name}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {labelFor(it.status)}
-                    </Text>
-                  </Group>
-                  <Progress value={it.progress} color={it.status === "error" ? "red" : undefined} />
-                  {it.error && (
-                    <Text size="xs" c="red">
-                      {it.error}
-                    </Text>
-                  )}
-                </Stack>
-              </List.Item>
-            ))}
-          </List>
+          <Table.ScrollContainer minWidth={720}>
+            <Table verticalSpacing="sm" horizontalSpacing="md">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th w={72} />
+                  <Table.Th w={200}>ファイル</Table.Th>
+                  <Table.Th>タイトル</Table.Th>
+                  <Table.Th>キャプション</Table.Th>
+                  <Table.Th>代替テキスト</Table.Th>
+                  <Table.Th w={100} />
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {items.map((it) => {
+                  const editable = it.status === "done" && Boolean(it.photoId);
+                  return (
+                    <Table.Tr key={it.id}>
+                      <Table.Td>
+                        {it.thumbUrl && (
+                          <img
+                            src={it.thumbUrl}
+                            alt={it.name}
+                            width={56}
+                            height={56}
+                            style={{ borderRadius: 6, objectFit: "cover" }}
+                          />
+                        )}
+                      </Table.Td>
+                      <Table.Td>
+                        <Stack gap={4}>
+                          <Text size="sm" truncate maw={180}>
+                            {it.name}
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            {labelFor(it.status)}
+                          </Text>
+                          {it.status !== "done" && (
+                            <Progress
+                              value={it.progress}
+                              color={it.status === "error" ? "red" : undefined}
+                            />
+                          )}
+                          {it.error && (
+                            <Text size="xs" c="red">
+                              {it.error}
+                            </Text>
+                          )}
+                        </Stack>
+                      </Table.Td>
+                      <Table.Td>
+                        <TextInput
+                          value={it.title}
+                          onChange={(e) =>
+                            updateItem(it.id, { saved: false, title: e.currentTarget.value })
+                          }
+                          disabled={!editable}
+                          maxLength={200}
+                        />
+                      </Table.Td>
+                      <Table.Td>
+                        <Textarea
+                          value={it.caption}
+                          onChange={(e) =>
+                            updateItem(it.id, { caption: e.currentTarget.value, saved: false })
+                          }
+                          disabled={!editable}
+                          autosize
+                          minRows={1}
+                          maxLength={2000}
+                        />
+                      </Table.Td>
+                      <Table.Td>
+                        <Textarea
+                          value={it.alt}
+                          onChange={(e) =>
+                            updateItem(it.id, { alt: e.currentTarget.value, saved: false })
+                          }
+                          disabled={!editable}
+                          autosize
+                          minRows={1}
+                          maxLength={500}
+                        />
+                      </Table.Td>
+                      <Table.Td>
+                        <Button
+                          size="xs"
+                          onClick={() => {
+                            void saveRow(it);
+                          }}
+                          loading={it.rowSaving}
+                          disabled={!editable}
+                        >
+                          {it.saved ? "保存済み" : "保存する"}
+                        </Button>
+                      </Table.Td>
+                    </Table.Tr>
+                  );
+                })}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
         </Paper>
       )}
 

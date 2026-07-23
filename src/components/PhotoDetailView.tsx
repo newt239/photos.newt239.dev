@@ -1,6 +1,21 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
-import { Anchor, Badge, Card, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import {
+  Anchor,
+  Badge,
+  Button,
+  Card,
+  Group,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+  Textarea,
+  Title,
+} from "@mantine/core";
+import { useRouter } from "@tanstack/react-router";
+
+import { generatePhotoDraft, updatePhoto } from "#/server/photos.ts";
 
 import { photoImageUrl } from "./PhotoCard";
 import classes from "./PhotoDetailView.module.css";
@@ -116,31 +131,119 @@ const renderInfoList = (rows: readonly InfoRow[]) => (
 type Props = {
   readonly photo: PhotoDetailData;
   readonly backLink?: ReactNode;
-  readonly editLink?: ReactNode;
 };
 
-export const PhotoDetailView = ({ photo, backLink, editLink }: Props) => {
+export const PhotoDetailView = ({ photo, backLink }: Props) => {
+  const router = useRouter();
   const imageSrc = photoImageUrl(photo.storageKey);
   const exifRows = buildExifRows(photo);
   const fileRows = buildFileRows(photo);
   const takenAt = formatDateTime(photo.takenAt);
   const hasLocation = photo.latitude !== null && photo.longitude !== null;
 
+  const [title, setTitle] = useState(photo.title ?? "");
+  const [caption, setCaption] = useState(photo.caption ?? "");
+  const [alt, setAlt] = useState(photo.alt ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleGenerate = async () => {
+    if (generating) {
+      return;
+    }
+    setGenerating(true);
+    setErrorMessage(null);
+    try {
+      const result = await generatePhotoDraft({ data: { id: photo.id } });
+      if (result.success) {
+        setCaption(result.caption);
+        setAlt(result.alt);
+      } else {
+        setErrorMessage(result.error);
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (submitting) {
+      return;
+    }
+    setSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const result = await updatePhoto({
+        data: {
+          alt: alt.trim() || null,
+          caption: caption.trim() || null,
+          id: photo.id,
+          title: title.trim() || null,
+        },
+      });
+      if (result.success) {
+        await router.invalidate();
+      } else {
+        setErrorMessage(result.error);
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <Stack p="xl" gap="md" maw={1200} mx="auto">
-      {(backLink || editLink) && (
-        <Group justify="space-between" wrap="nowrap">
-          {backLink}
-          {editLink}
-        </Group>
-      )}
+      {backLink && <Group wrap="nowrap">{backLink}</Group>}
 
-      <Stack gap={4}>
-        <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <Title order={2}>{photo.title ?? "(無題)"}</Title>
+      <Stack gap="md">
+        <Group justify="flex-end">
           <Badge variant="light">{photo.visibility === "public" ? "公開" : "非公開"}</Badge>
         </Group>
-        {photo.caption && <Text size="sm">{photo.caption}</Text>}
+        <TextInput
+          label="タイトル"
+          value={title}
+          onChange={(e) => setTitle(e.currentTarget.value)}
+          maxLength={200}
+        />
+        <Textarea
+          label="キャプション"
+          autosize
+          minRows={2}
+          value={caption}
+          onChange={(e) => setCaption(e.currentTarget.value)}
+          maxLength={2000}
+        />
+        <Textarea
+          label="代替テキスト"
+          autosize
+          minRows={2}
+          value={alt}
+          onChange={(e) => setAlt(e.currentTarget.value)}
+          maxLength={500}
+        />
+        {errorMessage && (
+          <Text size="sm" c="red">
+            {errorMessage}
+          </Text>
+        )}
+        <Group justify="space-between">
+          <Button
+            variant="light"
+            loading={generating}
+            disabled={submitting}
+            onClick={handleGenerate}
+          >
+            AIで生成する
+          </Button>
+          <Button loading={submitting} disabled={generating} onClick={handleSubmit}>
+            保存する
+          </Button>
+        </Group>
         {takenAt && (
           <Text size="sm" c="dimmed">
             撮影日時: {takenAt}
@@ -149,7 +252,7 @@ export const PhotoDetailView = ({ photo, backLink, editLink }: Props) => {
       </Stack>
 
       <div className={classes.frame} style={{ aspectRatio: `${photo.width} / ${photo.height}` }}>
-        <img src={imageSrc} alt={photo.alt ?? photo.title ?? ""} />
+        <img src={imageSrc} alt={alt || title || ""} />
       </div>
 
       <SimpleGrid cols={{ base: 1, md: hasLocation ? 3 : 2 }} spacing="md">
