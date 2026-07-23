@@ -2,7 +2,7 @@
   "rules": [
     {
       "allowed": {
-        "origins": ["http://localhost:3000", "https://photo.newt239.dev"],
+        "origins": ["http://localhost:3000", "https://photos.newt239.dev"],
         "methods": ["GET", "PUT", "HEAD"],
         "headers": ["Content-Type"]
       },
