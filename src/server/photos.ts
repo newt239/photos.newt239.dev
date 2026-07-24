@@ -215,21 +215,27 @@ export const generatePhotoDraft = createServerFn({ method: "POST" })
     if (!obj) {
       return { error: "IMAGE_NOT_FOUND", success: false } as const;
     }
-    const image = [...new Uint8Array(await obj.arrayBuffer())];
+    const bytes = new Uint8Array(await obj.arrayBuffer());
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binary += String.fromCodePoint(...bytes.subarray(i, i + 8192));
+    }
+    const dataUri = `data:${obj.httpMetadata?.contentType ?? "image/jpeg"};base64,${btoa(binary)}`;
 
-    const result = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", {
-      image,
+    const result = await env.AI.run("@cf/google/gemma-3-12b-it", {
       max_tokens: 512,
       messages: [
         {
-          content:
-            "あなたは写真管理アプリのアシスタントです。画像を見て日本語でキャプションと代替テキストを生成します。" +
-            '出力は必ず次のJSON形式のみとし、前後に文章を付けないでください: {"caption": "...", "alt": "..."}。' +
-            "caption は写真の魅力を伝える1〜2文の説明文。alt はスクリーンリーダー向けの簡潔で客観的な描写にしてください。",
-          role: "system",
-        },
-        {
-          content: "この画像のキャプションと代替テキストを日本語で生成してください。",
+          content: [
+            {
+              text:
+                "あなたは写真管理アプリのアシスタントです。画像を見て日本語でキャプションと代替テキストを生成します。" +
+                '出力は必ず次のJSON形式のみとし、前後に文章を付けないでください: {"caption": "...", "alt": "..."}。' +
+                "caption は写真の魅力を伝える1〜2文の説明文。alt はスクリーンリーダー向けの簡潔で客観的な描写にしてください。",
+              type: "text",
+            },
+            { image_url: { url: dataUri }, type: "image_url" },
+          ],
           role: "user",
         },
       ],
