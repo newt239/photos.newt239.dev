@@ -60,11 +60,11 @@ export const getPublicAlbumBySlug = createServerFn({ method: "GET" })
     const photoRows = await db
       .select({
         alt: photos.alt,
+        caption: photos.caption,
         height: photos.height,
         id: photos.id,
         storageKey: photos.storageKey,
         thumbnailKey: photos.thumbnailKey,
-        title: photos.title,
         width: photos.width,
       })
       .from(albumPhotos)

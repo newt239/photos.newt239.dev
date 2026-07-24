@@ -23,7 +23,7 @@ const PhotoDetailPage = () => {
 export const Route = createFileRoute("/admin/photos/$photoId")({
   component: PhotoDetailPage,
   head: ({ loaderData }) => ({
-    meta: [{ title: `${loaderData?.title ?? "写真"} | Photo` }],
+    meta: [{ title: `${loaderData?.caption ?? "写真"} | Photo` }],
   }),
   loader: async ({
     params,

@@ -9,7 +9,6 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  TextInput,
   Textarea,
   Title,
 } from "@mantine/core";
@@ -22,7 +21,6 @@ import classes from "./PhotoDetailView.module.css";
 
 type PhotoDetailData = {
   readonly id: string;
-  readonly title: string | null;
   readonly caption: string | null;
   readonly alt: string | null;
   readonly storageKey: string;
@@ -141,7 +139,6 @@ export const PhotoDetailView = ({ photo, backLink }: Props) => {
   const takenAt = formatDateTime(photo.takenAt);
   const hasLocation = photo.latitude !== null && photo.longitude !== null;
 
-  const [title, setTitle] = useState(photo.title ?? "");
   const [caption, setCaption] = useState(photo.caption ?? "");
   const [alt, setAlt] = useState(photo.alt ?? "");
   const [submitting, setSubmitting] = useState(false);
@@ -181,7 +178,6 @@ export const PhotoDetailView = ({ photo, backLink }: Props) => {
           alt: alt.trim() || null,
           caption: caption.trim() || null,
           id: photo.id,
-          title: title.trim() || null,
         },
       });
       if (result.success) {
@@ -204,12 +200,6 @@ export const PhotoDetailView = ({ photo, backLink }: Props) => {
         <Group justify="flex-end">
           <Badge variant="light">{photo.visibility === "public" ? "公開" : "非公開"}</Badge>
         </Group>
-        <TextInput
-          label="タイトル"
-          value={title}
-          onChange={(e) => setTitle(e.currentTarget.value)}
-          maxLength={200}
-        />
         <Textarea
           label="キャプション"
           autosize
@@ -252,7 +242,7 @@ export const PhotoDetailView = ({ photo, backLink }: Props) => {
       </Stack>
 
       <div className={classes.frame} style={{ aspectRatio: `${photo.width} / ${photo.height}` }}>
-        <img src={imageSrc} alt={alt || title || ""} />
+        <img src={imageSrc} alt={alt || caption || ""} />
       </div>
 
       <SimpleGrid cols={{ base: 1, md: hasLocation ? 3 : 2 }} spacing="md">

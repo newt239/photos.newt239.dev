@@ -15,6 +15,13 @@
       "when": 1784816384131,
       "tag": "0001_cynical_screwball",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784872872959,
+      "tag": "0002_lively_gamma_corps",
+      "breakpoints": true
     }
   ]
 }

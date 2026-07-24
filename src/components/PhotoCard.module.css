@@ -26,6 +26,6 @@
   object-fit: cover;
 }
 
-.title {
+.caption {
   border-top: 1px solid var(--mantine-color-gray-3);
 }

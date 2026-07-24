@@ -27,7 +27,7 @@ const AlbumPhotoDetailPage = () => {
 export const Route = createFileRoute("/admin/albums_/$slug/photos/$photoId")({
   component: AlbumPhotoDetailPage,
   head: ({ loaderData }) => ({
-    meta: [{ title: `${loaderData?.title ?? "写真"} | Photo` }],
+    meta: [{ title: `${loaderData?.caption ?? "写真"} | Photo` }],
   }),
   loader: async ({
     params,

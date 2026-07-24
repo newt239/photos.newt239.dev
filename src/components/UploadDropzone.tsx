@@ -1,16 +1,6 @@
 import { useState } from "react";
 
-import {
-  Button,
-  Group,
-  Paper,
-  Progress,
-  Stack,
-  Table,
-  Text,
-  TextInput,
-  Textarea,
-} from "@mantine/core";
+import { Button, Group, Paper, Progress, Stack, Table, Text, Textarea } from "@mantine/core";
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useRouter } from "@tanstack/react-router";
 
@@ -35,7 +25,6 @@ type UploadState = {
   error?: string;
   photoId?: string;
   thumbUrl?: string;
-  title: string;
   caption: string;
   alt: string;
   rowSaving?: boolean;
@@ -127,7 +116,6 @@ export const UploadDropzone = ({ onComplete }: { onComplete?: () => void }) => {
         name: file.name,
         progress: 0,
         status: "queued",
-        title: "",
       },
     }));
     setItems((prev) => [...prev, ...batch.map((b) => b.item)]);
@@ -156,7 +144,6 @@ export const UploadDropzone = ({ onComplete }: { onComplete?: () => void }) => {
           alt: item.alt.trim() || null,
           caption: item.caption.trim() || null,
           id: item.photoId,
-          title: item.title.trim() || null,
         },
       });
       if (result.success) {
@@ -203,7 +190,6 @@ export const UploadDropzone = ({ onComplete }: { onComplete?: () => void }) => {
                 <Table.Tr>
                   <Table.Th w={72} />
                   <Table.Th w={200}>ファイル</Table.Th>
-                  <Table.Th>タイトル</Table.Th>
                   <Table.Th>キャプション</Table.Th>
                   <Table.Th>代替テキスト</Table.Th>
                   <Table.Th w={100} />
@@ -245,16 +231,6 @@ export const UploadDropzone = ({ onComplete }: { onComplete?: () => void }) => {
                             </Text>
                           )}
                         </Stack>
-                      </Table.Td>
-                      <Table.Td>
-                        <TextInput
-                          value={it.title}
-                          onChange={(e) =>
-                            updateItem(it.id, { saved: false, title: e.currentTarget.value })
-                          }
-                          disabled={!editable}
-                          maxLength={200}
-                        />
                       </Table.Td>
                       <Table.Td>
                         <Textarea

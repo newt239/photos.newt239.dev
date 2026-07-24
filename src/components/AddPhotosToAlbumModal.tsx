@@ -103,7 +103,7 @@ export const AddPhotosToAlbumModal = ({
                       checked={already || checked}
                       disabled={already}
                       onChange={() => toggle(p.id)}
-                      aria-label={p.title ?? p.id}
+                      aria-label={p.caption ?? p.id}
                     />
                   </label>
                 );

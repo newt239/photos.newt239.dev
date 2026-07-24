@@ -92,6 +92,7 @@ export const getAlbumBySlug = createServerFn({ method: "GET" })
       .select({
         addedAt: albumPhotos.addedAt,
         alt: photos.alt,
+        caption: photos.caption,
         height: photos.height,
         id: photos.id,
         mimeType: photos.mimeType,
@@ -99,7 +100,6 @@ export const getAlbumBySlug = createServerFn({ method: "GET" })
         storageKey: photos.storageKey,
         takenAt: photos.takenAt,
         thumbnailKey: photos.thumbnailKey,
-        title: photos.title,
         uploadedAt: photos.uploadedAt,
         width: photos.width,
       })

@@ -71,7 +71,6 @@ const finalizePhotoInput = z.object({
   shutterSpeed: z.string().nullable().optional(),
   takenAt: z.string().datetime().nullable().optional(),
   thumbnailKey: z.string().nullable(),
-  title: z.string().max(200).nullable().optional(),
   width: z.number().int().positive(),
 });
 
@@ -113,7 +112,6 @@ export const finalizePhoto = createServerFn({ method: "POST" })
         storageKey: data.originalKey,
         takenAt: data.takenAt ? new Date(data.takenAt) : null,
         thumbnailKey: data.thumbnailKey,
-        title: data.title ?? null,
         userId,
         visibility: "private",
         width: data.width,
@@ -167,7 +165,6 @@ const updatePhotoInput = z.object({
   alt: z.string().max(500).nullable(),
   caption: z.string().max(2000).nullable(),
   id: z.string().min(1),
-  title: z.string().max(200).nullable(),
 });
 
 export const updatePhoto = createServerFn({ method: "POST" })
@@ -185,7 +182,7 @@ export const updatePhoto = createServerFn({ method: "POST" })
     }
     await db
       .update(photos)
-      .set({ alt: data.alt, caption: data.caption, title: data.title })
+      .set({ alt: data.alt, caption: data.caption })
       .where(and(eq(photos.id, data.id), eq(photos.userId, userId)));
     return { id: data.id, success: true } as const;
   });
