@@ -222,16 +222,23 @@ export const generatePhotoDraft = createServerFn({ method: "POST" })
     }
     const dataUri = `data:${obj.httpMetadata?.contentType ?? "image/jpeg"};base64,${btoa(binary)}`;
 
-    const result = await env.AI.run("@cf/google/gemma-3-12b-it", {
+    const result = await env.AI.run("@cf/meta/llama-4-scout-17b-16e-instruct", {
       max_tokens: 512,
       messages: [
         {
           content: [
             {
               text:
-                "あなたは写真管理アプリのアシスタントです。画像を見て日本語でキャプションと代替テキストを生成します。" +
+                "あなたは写真管理アプリのアシスタントです。画像を見て日本語で caption と alt を生成します。" +
                 '出力は必ず次のJSON形式のみとし、前後に文章を付けないでください: {"caption": "...", "alt": "..."}。' +
-                "caption は写真の魅力を伝える1〜2文の説明文。alt はスクリーンリーダー向けの簡潔で客観的な描写にしてください。",
+                "caption は写真の魅力を伝える1〜2文の宣伝文にしてください。" +
+                "alt はスクリーンリーダー利用者が視覚情報なしで内容を理解できる代替テキストです。次のルールに従ってください。" +
+                "1文目は必ず「◯◯の写真」「◯◯のスクリーンショット」「◯◯の画像」のいずれかで始める。実写なら写真、PCやスマホの画面キャプチャならスクリーンショット、イラストや図解やCGなど上記以外なら画像とする。" +
+                "続けて3〜5文程度で、構図や主要な要素を平易な日本語で説明的に描写する。専門用語や難しい言い回しは避ける。" +
+                "投稿者が伝えたいであろう主題に関係する情報だけを書き、写っているものを網羅的に列挙しない。" +
+                "「美しい」「素晴らしい」などの主観的評価や、「◯◯のように見えます」などの曖昧な推測表現は避ける。" +
+                "人物は中立的に「人物」と表現し、性別や年齢などの属性は主題に明確に関係する場合のみ言及する。" +
+                "スクリーンショットや文字が主要な情報となる画像では、説明の後に改行を入れて画像内のテキストを読みやすく書き起こす。ただしOSのステータスバーやブラウザのUIなど主題に関係しないUI要素は書き起こさない。",
               type: "text",
             },
             { image_url: { url: dataUri }, type: "image_url" },
@@ -242,25 +249,16 @@ export const generatePhotoDraft = createServerFn({ method: "POST" })
       temperature: 0.2,
     });
 
-    const raw = typeof result.response === "string" ? result.response : "";
-    const match = /\{[\s\S]*\}/.exec(raw);
-    let caption = raw.trim();
+    const { response } = result;
+    const parsed = draftSchema.safeParse(response);
+    let caption = "";
     let alt = "";
-    if (match) {
-      try {
-        const parsed = draftSchema.safeParse(JSON.parse(match[0]));
-        if (parsed.success) {
-          const { alt: parsedAlt, caption: parsedCaption } = parsed.data;
-          if (parsedCaption !== undefined) {
-            caption = parsedCaption;
-          }
-          if (parsedAlt !== undefined) {
-            alt = parsedAlt;
-          }
-        }
-      } catch {
-        // JSON のパースに失敗した場合は全文を caption として扱う
-      }
+    if (parsed.success) {
+      const { alt: parsedAlt, caption: parsedCaption } = parsed.data;
+      caption = parsedCaption ?? "";
+      alt = parsedAlt ?? "";
+    } else if (typeof response === "string") {
+      caption = response.trim();
     }
 
     return { alt, caption, success: true } as const;
